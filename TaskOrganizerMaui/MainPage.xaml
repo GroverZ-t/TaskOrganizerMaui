@@ -1,0 +1,96 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:TaskOrganizerMaui.ViewModels"
+             xmlns:models="clr-namespace:TaskOrganizerMaui.Models"
+             x:Class="TaskOrganizerMaui.MainPage"
+             Title="Органайзер by Andrey Rushkin">
+
+    <Grid RowDefinitions="Auto, *, Auto" Padding="15" RowSpacing="15">
+
+        <!-- 1. ИСПРАВЛЕННЫЙ ФИЛЬТР-АКТИВНОСТЬ (Теперь просто и надежно!) -->
+        <Picker Grid.Row="0" 
+                Title="Фильтр по категории" 
+                ItemsSource="{Binding FilterCategories}" 
+                SelectedItem="{Binding SelectedFilterString, Mode=TwoWay}" 
+                Margin="0,0,0,10" />
+
+        <!-- 2. СПИСОК ЗАДАЧ -->
+        <CollectionView Grid.Row="1" ItemsSource="{Binding Tasks}">
+            <CollectionView.EmptyView>
+                <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="10">
+                    <Label Text="Задач пока нет 🎉" FontSize="18" TextColor="Gray" HorizontalTextAlignment="Center"/>
+                    <Label Text="Нажмите кнопку ниже, чтобы добавить первую задачу" TextColor="LightGray" HorizontalTextAlignment="Center"/>
+                </VerticalStackLayout>
+            </CollectionView.EmptyView>
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:TaskItem">
+                    <Frame Padding="10" Margin="0,5" BorderColor="LightGray" CornerRadius="8">
+                        <Grid ColumnDefinitions="Auto, *, Auto" RowDefinitions="Auto, Auto" ColumnSpacing="10" RowSpacing="5">
+
+                            <Label Grid.Row="0" Grid.RowSpan="2" Grid.Column="0"
+                                   Text="☐" 
+                                   FontSize="28" 
+                                   VerticalTextAlignment="Center" 
+                                   HorizontalTextAlignment="Center" 
+                                   WidthRequest="40"
+                                   TextColor="Gray">
+
+                                <!-- При нажатии вызываем команду из ViewModel -->
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:MainViewModel}}, Path=ToggleTaskCompletionCommand}"
+                              CommandParameter="{Binding .}" />
+                                </Label.GestureRecognizers>
+
+                                <!-- Автоматически меняем значок и цвет, когда IsCompleted становится True -->
+                                <Label.Triggers>
+                                    <DataTrigger TargetType="Label" Binding="{Binding IsCompleted}" Value="True">
+                                        <Setter Property="Text" Value="☑" />
+                                        <Setter Property="TextColor" Value="Green" />
+                                    </DataTrigger>
+                                </Label.Triggers>
+                            </Label>
+
+                            <!-- Название и описание -->
+                            <Label Grid.Row="0" Grid.Column="1" Text="{Binding Title}" FontAttributes="Bold" FontSize="16" />
+                            <Label Grid.Row="1" Grid.Column="1" Text="{Binding Description}" TextColor="Gray" FontSize="14" />
+
+                            <!-- Категория и кнопка удаления -->
+                            <VerticalStackLayout Grid.Row="0" Grid.RowSpan="2" Grid.Column="2" HorizontalOptions="End" Spacing="5">
+                                <Label Text="{Binding Category}" FontSize="12" TextColor="White" BackgroundColor="Teal" Padding="5,2" HorizontalOptions="End">
+                                    <Label.Triggers>
+                                        <DataTrigger TargetType="Label" Binding="{Binding Category}" Value="Work">
+                                            <Setter Property="BackgroundColor" Value="Red" />
+                                        </DataTrigger>
+                                        <DataTrigger TargetType="Label" Binding="{Binding Category}" Value="Study">
+                                            <Setter Property="BackgroundColor" Value="Orange" />
+                                        </DataTrigger>
+                                        <DataTrigger TargetType="Label" Binding="{Binding Category}" Value="Personal">
+                                            <Setter Property="BackgroundColor" Value="Green" />
+                                        </DataTrigger>
+                                    </Label.Triggers>
+                                </Label>
+
+                                <Button Text="✏️" BackgroundColor="Transparent" TextColor="Blue" 
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:MainViewModel}}, Path=EditTaskCommand}" 
+                                        CommandParameter="{Binding .}" 
+                                        WidthRequest="40" HeightRequest="40" Padding="0" />
+
+                                <Button Text="🗑️" BackgroundColor="Transparent" TextColor="Red" 
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:MainViewModel}}, Path=DeleteTaskCommand}" 
+                                        CommandParameter="{Binding .}" 
+                                        WidthRequest="40" HeightRequest="40" Padding="0" />
+                            </VerticalStackLayout>
+                        </Grid>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- 3. КНОПКА ДОБАВЛЕНИЯ -->
+        <Button Grid.Row="2" Text="➕ Добавить задачу" 
+                Command="{Binding OpenAddTaskPageCommand}" 
+                HeightRequest="50" CornerRadius="10" BackgroundColor="Teal" />
+    </Grid>
+</ContentPage>

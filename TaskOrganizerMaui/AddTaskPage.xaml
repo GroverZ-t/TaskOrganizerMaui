@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="TaskOrganizerMaui.AddTaskPage"
+             Title="{Binding PageTitle}">
+
+    <VerticalStackLayout Padding="20" Spacing="20">
+        <Label Text="{Binding PageTitle}" FontSize="24" FontAttributes="Bold" HorizontalOptions="Center" />
+
+        <Entry Placeholder="Название задачи" Text="{Binding Title}" />
+        <Entry Placeholder="Описание (необязательно)" Text="{Binding Description}" />
+
+        <Picker Title="Выберите категорию" 
+                ItemsSource="{Binding Categories}" 
+                SelectedItem="{Binding SelectedCategory, Mode=TwoWay}" />
+
+        <Button Text="{Binding SaveButtonText}" 
+                Command="{Binding SaveTaskCommand}" 
+                BackgroundColor="Teal" 
+                Margin="0,20,0,0" />
+
+        <Button Text="Отмена" 
+                Command="{Binding CancelCommand}" 
+                BackgroundColor="LightGray" 
+                TextColor="Black" />
+    </VerticalStackLayout>
+</ContentPage>
