@@ -4,27 +4,44 @@ on: [push]
 
 jobs:
   build:
-    # Используем macos-14 для максимальной стабильности (macos-15 может быть в preview)
     runs-on: macos-14
     
     steps:
-      # 1. Получаем код из репозитория
       - uses: actions/checkout@v4
 
-      # 2. Устанавливаем .NET 9
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
 
-      # 3. Устанавливаем workload MAUI
+      # 🆕 НОВЫЙ ШАГ: Выбираем правильную версию Xcode
+      - name: Select Xcode 16.0
+        run: |
+          echo "📱 Доступные версии Xcode:"
+          ls -d /Applications/Xcode*.app
+          
+          # Выбираем Xcode 16.0 (или 16.1, если 16.0 нет)
+          if [ -d "/Applications/Xcode_16.0.app" ]; then
+            sudo xcode-select -s /Applications/Xcode_16.0.app
+            echo "✅ Выбран Xcode 16.0"
+          elif [ -d "/Applications/Xcode_16.1.app" ]; then
+            sudo xcode-select -s /Applications/Xcode_16.1.app
+            echo "✅ Выбран Xcode 16.1"
+          elif [ -d "/Applications/Xcode_16.app" ]; then
+            sudo xcode-select -s /Applications/Xcode_16.app
+            echo "✅ Выбран Xcode 16"
+          else
+            echo "❌ Xcode 16 не найден, используем текущую версию"
+          fi
+          
+          echo ""
+          echo "Текущая версия Xcode:"
+          xcodebuild -version
+
       - name: Install MAUI workload
         run: dotnet workload install maui
 
-      # 4. Сборка iOS приложения (без подписи)
       - name: Build iOS App Bundle (Unsigned)
         run: |
-          # ⚠️ ВАЖНО: Убедись, что этот путь совпадает с твоей структурой!
-          # Обычно это ИмяПапки/ИмяПроекта.csproj
           CSPROJ="TaskOrganizerMaui/TaskOrganizerMaui.csproj"
           
           echo "🔨 Building project: $CSPROJ"
@@ -40,12 +57,10 @@ jobs:
             -p:EnableCodeSigning=false \
             -p:SkipCodesigning=true
 
-      # 5. Поиск .app папки и упаковка в .ipa
       - name: Find and Zip .app Bundle
         run: |
           echo "🔍 Searching for .app bundle..."
           
-          # Ищем папку .app в директории bin/
           APP_DIR=$(find . -type d -name "*.app" -path "*/bin/*" 2>/dev/null | head -n 1)
           
           if [ -z "$APP_DIR" ]; then
@@ -56,13 +71,9 @@ jobs:
           
           echo "✅ Found .app at: $APP_DIR"
           
-          # Создаем папку для выходных файлов
           mkdir -p output
-          
-          # Копируем .app в папку output
           cp -R "$APP_DIR" output/TaskOrganizerMaui.app
           
-          # Переходим в output и упаковываем .app в .zip, затем переименовываем в .ipa
           cd output
           zip -r TaskOrganizerMaui.ipa TaskOrganizerMaui.app
           cd ..
@@ -70,7 +81,6 @@ jobs:
           echo "📦 Successfully created output/TaskOrganizerMaui.ipa"
           ls -la output/
 
-      # 6. Загрузка артефакта в GitHub
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
