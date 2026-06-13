@@ -13,6 +13,14 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      - name: Verify .NET SDK version
+        run: |
+          echo "Используемая версия .NET SDK:"
+          dotnet --version
+          echo ""
+          echo "Все установленные SDK:"
+          dotnet --list-sdks
+
       - name: Select Xcode
         run: |
           if [ -d "/Applications/Xcode_16.0.app" ]; then
@@ -32,6 +40,8 @@ jobs:
           CSPROJ="./TaskOrganizerMaui/TaskOrganizerMaui.csproj"
           
           echo "Building project: $CSPROJ"
+          echo "Используемый .NET SDK:"
+          dotnet --version
           
           dotnet publish "$CSPROJ" \
             -f net8.0-ios \
@@ -46,8 +56,7 @@ jobs:
             -p:MauiVersion=8.0.100 \
             -p:EnableCodeSigning=false \
             -p:SkipCodesigning=true \
-            -p:ProvisioningProfile="" \
-            -p:CheckEolTargetFrameworks=false  # ← ИСПРАВЛЕНИЕ: Отключаем проверку EOL
+            -p:ProvisioningProfile=""
 
       - name: Find and Zip .app Bundle
         run: |
