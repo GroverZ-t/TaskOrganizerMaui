@@ -4,7 +4,8 @@ on: [push]
 
 jobs:
   build:
-    runs-on: macos-15
+    # Используем macos-14 для максимальной стабильности (macos-15 может быть в preview)
+    runs-on: macos-14
     
     steps:
       # 1. Получаем код из репозитория
@@ -15,21 +16,64 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
-      # 3. Проверяем окружение
-      - name: Check environment
+      # 3. Устанавливаем workload MAUI
+      - name: Install MAUI workload
+        run: dotnet workload install maui
+
+      # 4. Сборка iOS приложения (без подписи)
+      - name: Build iOS App Bundle (Unsigned)
         run: |
-          echo "✅ Workflow запущен!"
-          echo "Операционная система:"
-          uname -a
-          echo ""
-          echo "Версия .NET:"
-          dotnet --version
-          echo ""
-          echo "Список workload:"
-          dotnet workload list
-          echo ""
-          echo "Структура репозитория:"
-          ls -la
-          echo ""
-          echo "Содержимое папки TaskOrganizerMaui:"
-          ls -la TaskOrganizerMaui/ || echo "Папка не найдена"
+          # ⚠️ ВАЖНО: Убедись, что этот путь совпадает с твоей структурой!
+          # Обычно это ИмяПапки/ИмяПроекта.csproj
+          CSPROJ="TaskOrganizerMaui/TaskOrganizerMaui.csproj"
+          
+          echo "🔨 Building project: $CSPROJ"
+          
+          dotnet publish "$CSPROJ" \
+            -f net9.0-ios \
+            -c Release \
+            -p:RuntimeIdentifier=ios-arm64 \
+            -p:BuildIpa=false \
+            -p:ArchiveOnBuild=false \
+            -p:CodesignKey="" \
+            -p:CodesignProvision="" \
+            -p:EnableCodeSigning=false \
+            -p:SkipCodesigning=true
+
+      # 5. Поиск .app папки и упаковка в .ipa
+      - name: Find and Zip .app Bundle
+        run: |
+          echo "🔍 Searching for .app bundle..."
+          
+          # Ищем папку .app в директории bin/
+          APP_DIR=$(find . -type d -name "*.app" -path "*/bin/*" 2>/dev/null | head -n 1)
+          
+          if [ -z "$APP_DIR" ]; then
+            echo "❌ ERROR: .app not found. Searching everywhere:"
+            find . -type d -name "*.app" 2>/dev/null
+            exit 1
+          fi
+          
+          echo "✅ Found .app at: $APP_DIR"
+          
+          # Создаем папку для выходных файлов
+          mkdir -p output
+          
+          # Копируем .app в папку output
+          cp -R "$APP_DIR" output/TaskOrganizerMaui.app
+          
+          # Переходим в output и упаковываем .app в .zip, затем переименовываем в .ipa
+          cd output
+          zip -r TaskOrganizerMaui.ipa TaskOrganizerMaui.app
+          cd ..
+          
+          echo "📦 Successfully created output/TaskOrganizerMaui.ipa"
+          ls -la output/
+
+      # 6. Загрузка артефакта в GitHub
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TaskOrganizerMaui-iOS-Build
+          path: output/TaskOrganizerMaui.ipa
+          retention-days: 7
