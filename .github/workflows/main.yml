@@ -1,0 +1,35 @@
+name: Build MAUI iOS App Bundle
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: macos-15
+    
+    steps:
+      # 1. Получаем код из репозитория
+      - uses: actions/checkout@v4
+
+      # 2. Устанавливаем .NET 9
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      # 3. Проверяем окружение
+      - name: Check environment
+        run: |
+          echo "✅ Workflow запущен!"
+          echo "Операционная система:"
+          uname -a
+          echo ""
+          echo "Версия .NET:"
+          dotnet --version
+          echo ""
+          echo "Список workload:"
+          dotnet workload list
+          echo ""
+          echo "Структура репозитория:"
+          ls -la
+          echo ""
+          echo "Содержимое папки TaskOrganizerMaui:"
+          ls -la TaskOrganizerMaui/ || echo "Папка не найдена"
