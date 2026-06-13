@@ -18,7 +18,6 @@ jobs:
           echo "🔍 Доступные версии Xcode:"
           ls -d /Applications/Xcode*.app 2>/dev/null || echo "Не найдено"
           
-          # Явно ищем Xcode 16.x версии
           if [ -d "/Applications/Xcode_16.2.app" ]; then
             sudo xcode-select -s /Applications/Xcode_16.2.app
             echo "✅ Выбран Xcode 16.2"
@@ -63,7 +62,8 @@ jobs:
             -p:SkipCodesigning=true \
             -p:ProvisioningProfile=""
 
-      - name: Find and Zip .app Bundle
+      # 🔧 ИСПРАВЛЕННЫЙ ШАГ: Правильная упаковка .ipa
+      - name: Create Proper IPA File
         run: |
           echo "🔍 Searching for .app bundle..."
           
@@ -77,18 +77,19 @@ jobs:
           
           echo "✅ Found .app at: $APP_DIR"
           
-          mkdir -p output
-          cp -R "$APP_DIR" output/TaskOrganizerMaui.app
+          # Создаем правильную структуру IPA: Payload/AppName.app
+          mkdir -p output/Payload
+          cp -R "$APP_DIR" output/Payload/TaskOrganizerMaui.app
           
-          echo "Copied. Contents:"
-          ls -la output/TaskOrganizerMaui.app/ | head -20
-          
+          # Упаковываем в .ipa (это просто zip с правильной структурой)
           cd output
-          zip -r TaskOrganizerMaui.ipa TaskOrganizerMaui.app
+          zip -r TaskOrganizerMaui.ipa Payload/
           cd ..
           
           echo "📦 Successfully created output/TaskOrganizerMaui.ipa"
-          ls -la output/
+          echo ""
+          echo "Структура .ipa файла:"
+          unzip -l output/TaskOrganizerMaui.ipa | head -30
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
